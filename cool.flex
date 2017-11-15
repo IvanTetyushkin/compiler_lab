@@ -50,6 +50,11 @@ extern YYSTYPE cool_yylval;
  */
 
 DARROW          =>
+WHITESPACE		[ \t\r\f\v]+
+NEWLINE			[\n]
+ELSE			[eE][lL][sS][eE]
+TRUE			t[rR][uU][eE]
+TYPEID			[A-Z][_a-zA-Z0-9]*
 
 %%
 
@@ -61,7 +66,14 @@ DARROW          =>
  /*
   *  The multiple-character operators.
   */
+  
+<INITIAL>{NEWLINE}		{++curr_lineno;}
+<INITIAL>{WHITESPACE}	;
+<INITIAL>{ELSE}			{return(ELSE);}
 {DARROW}		{ return (DARROW); }
+<INITIAL>{TRUE}			{yylval.boolean = true; return (BOOL_CONST);}
+<INITIAL>{TYPEID}		{yylval.symbol = stringtable.add_string(yytext);
+						return(TYPEID);}
 
  /*
   * Keywords are case-insensitive except for the values true and false,
