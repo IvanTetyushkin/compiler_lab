@@ -122,13 +122,15 @@ NOTSTRING       [^\n\0\\\"]
 CASE            [cC][aA][sS][eE]
 OF              [oO][fF]
 ESAC            [eE][sS][aA][cC]
+ISVOID			[iI][sS][vV][oO][iI][dD]
+NOT				[nN][oO][tT]
 %x COMMENT
 %x STRING
 %%
 
-/*
-*  Nested comments
-*/
+ /*
+ *  Nested comments
+ */
 
 
  /*
@@ -138,13 +140,12 @@ ESAC            [eE][sS][aA][cC]
 <INITIAL,COMMENT>{NEWLINE}  {++curr_lineno;};
 <INITIAL>{WHITESPACE}       ;
 <INITIAL>{ELSE}             {return(ELSE);};
+<INITIAL>{THEN}             {return(THEN);}
 {DARROW}                    { return (DARROW); };
 <INITIAL>{TRUE}             {yylval.boolean = true; return (BOOL_CONST);};
 <INITIAL>{FALSE}            {yylval.boolean = false; return(BOOL_CONST);}
-<INITIAL>{TYPEID}           {yylval.symbol = stringtable.add_string(yytext);
-                            return(TYPEID);};
+<INITIAL>{ISVOID}			{return(ISVOID);}
 <INITIAL>{LOOP}             {return(LOOP);}
-<INITIAL>{THEN}             {return(THEN);}
 <INITIAL>{CLASS}            {return(CLASS);};
 <INITIAL>{LET}              {return (LET);}
 <INITIAL>{IN}               {return (IN);}
@@ -158,6 +159,9 @@ ESAC            [eE][sS][aA][cC]
 <INITIAL>{CASE}             {return(CASE);}
 <INITIAL>{OF}               {return(OF);}
 <INITIAL>{ESAC}             {return(ESAC);}
+<INITIAL>{NOT}				{return(NOT);}
+<INITIAL>{TYPEID}           {yylval.symbol = stringtable.add_string(yytext);
+                            return(TYPEID);};
 <INITIAL,COMMENT>{START_COMMENT} {++comment; BEGIN(COMMENT);};
 <COMMENT>{END_COMMENT}      {comment--;
                             if( comment == 0)
@@ -169,6 +173,10 @@ ESAC            [eE][sS][aA][cC]
 <COMMENT>{NOTCOMMENT}*             ;
 <COMMENT>{BACKSLASH}(.|{NEWLINE})   {backslash_common();/**/};
 <COMMENT>{BACKSLASH}               ;
+<COMMENT><<EOF>>			{yylval.error_msg = "EOF in comment";
+							BEGIN(INITIAL);
+							return(ERROR);}
+<INITIAL>{END_COMMENT}		{yylval.error_msg = "EOF in string constant"; return(ERROR);}
 <INITIAL>"{"                {return int('{');};
 <INITIAL>"}"                {return int('}');}
 <INITIAL>":"                {return int(':');};
@@ -184,8 +192,7 @@ ESAC            [eE][sS][aA][cC]
 <INITIAL>","                {return int(',');}
 <INITIAL>"~"                {return int('~');}
 <INITIAL>"."                {return int('.');}
-<INITIAL>">"                {return int('>');}
-<INITIAL>"<"                {return int('<');}
+<INITIAL>"<"				{return int('<');}
 <INITIAL>"+"                {return int('+');}
 <INITIAL>"-"                {return int('-');}
 <INITIAL>"="                {return int('=');}
@@ -243,7 +250,7 @@ ESAC            [eE][sS][aA][cC]
                                     if(rc!=0)
                                         return(ERROR);
                                 }
-
+<INITIAL>.				{ yylval.error_msg = yytext; return (ERROR); }
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
