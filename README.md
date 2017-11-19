@@ -1,2 +1,2 @@
 # compiler_lab
-There will be placed 
+There will be placed lexer
